@@ -15,8 +15,6 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <opencv/cv.h>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/search/impl/search.hpp>
@@ -35,6 +33,8 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
+
+#include <opencv2/opencv.hpp>
  
 #include <vector>
 #include <cmath>
@@ -53,7 +53,7 @@
 #include <array>
 #include <thread>
 #include <mutex>
-#include "livox_ros_driver/CustomMsg.h"
+// #include "livox_ros_driver/CustomMsg.h"
 using namespace std;
 
 typedef pcl::PointXYZI PointType;

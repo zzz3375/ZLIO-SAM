@@ -1,5 +1,5 @@
 #include "utility.h"
-#include "lio_sam/cloud_info.h"
+#include "lio_sam_mid360_pointcloud2/cloud_info.h"
 
 struct VelodynePointXYZIRT
 {
@@ -68,8 +68,8 @@ private:
     ros::Subscriber subOdom;
     std::deque<nav_msgs::Odometry> odomQueue;
 
-    std::deque<livox_ros_driver::CustomMsg> cloudQueue;
-    livox_ros_driver::CustomMsg currentCloudMsg;
+    std::deque<sensor_msgs::PointCloud2> cloudQueue;
+    sensor_msgs::PointCloud2 currentCloudMsg;
 
     double *imuTime = new double[queueLength];
     double *imuRotX = new double[queueLength];
@@ -93,7 +93,7 @@ private:
     float odomIncreY;
     float odomIncreZ;
 
-    lio_sam::cloud_info cloudInfo;
+    lio_sam_mid360_pointcloud2::cloud_info cloudInfo;
     double timeScanCur;
     double timeScanEnd;
     std_msgs::Header cloudHeader;
@@ -107,10 +107,11 @@ public:
     {
         subImu        = nh.subscribe<sensor_msgs::Imu>(imuTopic, 2000, &ImageProjection::imuHandler, this, ros::TransportHints().tcpNoDelay());
         subOdom       = nh.subscribe<nav_msgs::Odometry>(odomTopic+"_incremental", 2000, &ImageProjection::odometryHandler, this, ros::TransportHints().tcpNoDelay());
-        subLaserCloud = nh.subscribe<livox_ros_driver::CustomMsg>(pointCloudTopic, 5, &ImageProjection::cloudHandler, this, ros::TransportHints().tcpNoDelay());
+        subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic, 5, &ImageProjection::cloudHandler, this, ros::TransportHints().tcpNoDelay());
+        
 
         pubExtractedCloud = nh.advertise<sensor_msgs::PointCloud2> ("lio_sam/deskew/cloud_deskewed", 1);
-        pubLaserCloudInfo = nh.advertise<lio_sam::cloud_info> ("lio_sam/deskew/cloud_info", 1);
+        pubLaserCloudInfo = nh.advertise<lio_sam_mid360_pointcloud2::cloud_info> ("lio_sam/deskew/cloud_info", 1);
 
         allocateMemory();
         resetParameters();
@@ -191,7 +192,7 @@ public:
         odomQueue.push_back(*odometryMsg);
     }
 
-    void cloudHandler(const livox_ros_driver::CustomMsgConstPtr& laserCloudMsg)
+    void cloudHandler(const sensor_msgs::PointCloud2::ConstPtr& laserCloudMsg)
     {
         if (!cachePointCloud(laserCloudMsg))
             return;
@@ -208,30 +209,30 @@ public:
         resetParameters();
     }
 
-    void moveFromCustomMsg(livox_ros_driver::CustomMsg &Msg, pcl::PointCloud<PointXYZIRT> & cloud)
-    {
-        cloud.clear();
-        cloud.reserve(Msg.point_num);
-        PointXYZIRT point;
+    // void moveFromCustomMsg(livox_ros_driver::CustomMsg &Msg, pcl::PointCloud<PointXYZIRT> & cloud)
+    // {
+    //     cloud.clear();
+    //     cloud.reserve(Msg.point_num);
+    //     PointXYZIRT point;
 
-        cloud.header.frame_id=Msg.header.frame_id;
-        cloud.header.stamp=Msg.header.stamp.toNSec()/1000;
-        cloud.header.seq=Msg.header.seq;
+    //     cloud.header.frame_id=Msg.header.frame_id;
+    //     cloud.header.stamp=Msg.header.stamp.toNSec()/1000;
+    //     cloud.header.seq=Msg.header.seq;
 
-        for(uint i=0;i<Msg.point_num-1;i++)
-        {
-            point.x=Msg.points[i].x; 
-            point.y=Msg.points[i].y; 
-            point.z=Msg.points[i].z; 
-            point.intensity=Msg.points[i].reflectivity; 
-            point.tag=Msg.points[i].tag; 
-            point.time=Msg.points[i].offset_time*1e-9; 
-            point.ring=Msg.points[i].line; 
-            cloud.push_back(point);
-        }
-    }
+    //     for(uint i=0;i<Msg.point_num-1;i++)
+    //     {
+    //         point.x=Msg.points[i].x; 
+    //         point.y=Msg.points[i].y; 
+    //         point.z=Msg.points[i].z; 
+    //         point.intensity=Msg.points[i].reflectivity; 
+    //         point.tag=Msg.points[i].tag; 
+    //         point.time=Msg.points[i].offset_time*1e-9; 
+    //         point.ring=Msg.points[i].line; 
+    //         cloud.push_back(point);
+    //     }
+    // }
 
-    bool cachePointCloud(const livox_ros_driver::CustomMsgConstPtr& laserCloudMsg)
+    bool cachePointCloud(const sensor_msgs::PointCloud2::ConstPtr &laserCloudMsg)
     {
         // cache point cloud
         cloudQueue.push_back(*laserCloudMsg);
@@ -243,7 +244,7 @@ public:
         cloudQueue.pop_front();
         if (sensor == SensorType::LIVOX)
         {
-            moveFromCustomMsg(currentCloudMsg, *laserCloudIn);
+            pcl::moveFromROSMsg(currentCloudMsg, *laserCloudIn);
         }
         else
         {
