@@ -84,8 +84,8 @@ lio_sam:
 
   # Visualization
   globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius
-  globalMapVisualizationPoseDensity: 10      # meters, global map visualization keyframe density
-  globalMapVisualizationLeafSize: 1          # meters, global map visualization cloud density
+  globalMapVisualizationPoseDensity: 10    # meters, global map visualization keyframe density
+  globalMapVisualizationLeafSize: 1           # meters, global map visualization cloud density
 
 
 
